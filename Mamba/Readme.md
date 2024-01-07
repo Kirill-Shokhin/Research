@@ -1,6 +1,6 @@
 # Deep State Space models
 
-### Linear continuous time-invariant state-space model:
+### Linear continuous time-invariant state-space model
 
 $$ \boldsymbol{\dot x}(t) = \boldsymbol{Ax}(t)+\boldsymbol{Bu}(t) $$
 
@@ -8,7 +8,7 @@ $$\boldsymbol{y}(t) = \boldsymbol{Cx}(t)+\boldsymbol{Du}(t) $$
 
 Применительно к DL параметр полагают $`\boldsymbol{D}=0`$, поэтому далее везде опускаем это слагаемое.
 
-### Discretization of linear state space model:
+### Discretization of linear state space model
 Умножим первое уравнение на $`e^{-\boldsymbol{A}t}`$:
 
 $$ e^{-\boldsymbol{A}t} \boldsymbol{\dot x}(t) - e^{-\boldsymbol{A}t} \boldsymbol{Ax}(t) = e^{-\boldsymbol{A}t} \boldsymbol{Bu}(t)$$
@@ -47,7 +47,7 @@ $$\left\{ \begin{array}{lcl}
 \boldsymbol{\overline{C}} = \boldsymbol{C}\\
 \end{array} \right$$
 
-### Bilinear transform:
+### Bilinear transform
 Для упрощения вычислений матричной экспоненты применяем следующую апроксимацию:
 
 $$ e^{\boldsymbol{A}\Delta} \approx \left(\boldsymbol{I} - \frac{1}{2} \boldsymbol{A}\Delta \right)^{-1} 
@@ -61,3 +61,23 @@ $$
 \boldsymbol{\overline{B}} = \dfrac{\Delta \boldsymbol{B}}{\left(\boldsymbol{I} - \frac{1}{2} \boldsymbol{A}\Delta \right)}, \\;\\;\\;
 \boldsymbol{\overline{C}} = \boldsymbol{C}
 $$
+
+### The Convolutional Representation
+Положим для упрощения $`x_{-1}=0`$, тогда:
+
+$$ 
+x_0=\boldsymbol{\overline{B}}u_0, \\;\\; 
+x_1=\boldsymbol{\overline{AB}}u_0 + \boldsymbol{\overline{B}}u_1, \\;\\; 
+x_2=\boldsymbol{\overline{A^2B}}u_0 + \boldsymbol{\overline{AB}}u_1 + \boldsymbol{\overline{B}}u_2, \\;\\; 
+...
+$$
+
+$$y_k = \boldsymbol{\overline{C}} \sum_{i=0}^k \overline{\boldsymbol{A}^{k-i}\boldsymbol{B}}u_i$$
+
+Или в векторном виде:
+
+$$\boldsymbol{\overline{K}} \in \mathbb{R}^L= (\boldsymbol{\overline{CB}}, \boldsymbol{\overline{CAB}}, ..., \boldsymbol{\overline{CA^{L-1}B}})$$
+
+$$ \boldsymbol{y} = \boldsymbol{\overline{K}} * \boldsymbol{u}$$
+
+Таким образом, для любой длины L входной последовательности, выход $`\boldsymbol{y}`$ может быть получен за одну свертку.
