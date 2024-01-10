@@ -1,83 +1,128 @@
-# Deep State Space models
+# Mamba or first Selective SSM
+![image (7)](https://github.com/Kirill-Shokhin/Research/assets/46619252/b6209055-8de7-43ae-902e-f116735ef9b2)
 
-### Linear continuous time-invariant state-space model
+## General state space model
+### Linear continuous time-invariant SSM
 
-$$ \boldsymbol{\dot x}(t) = \boldsymbol{Ax}(t)+\boldsymbol{Bu}(t) $$
+Оригинальный вид непрерывной модели пространства состояний выглядит так:
 
-$$\boldsymbol{y}(t) = \boldsymbol{Cx}(t)+\boldsymbol{Du}(t) $$
+$$ \boldsymbol{\dot h}(t) = \boldsymbol{Ah}(t)+\boldsymbol{Bx}(t) $$
 
-Применительно к DL параметр полагают $`\boldsymbol{D}=0`$, поэтому далее везде опускаем это слагаемое.
+$$\boldsymbol{y}(t) = \boldsymbol{Ch}(t)+\boldsymbol{Dx}(t) $$
 
-### Discretization of linear state space model
+Чтобы взаимодествовать с ней в векторном виде конечной размерности, нужно дискретизовать ее.
+
+### Discretization of linear time-invariant SSM
 Умножим первое уравнение на $`e^{-\boldsymbol{A}t}`$:
 
-$$ e^{-\boldsymbol{A}t} \boldsymbol{\dot x}(t) - e^{-\boldsymbol{A}t} \boldsymbol{Ax}(t) = e^{-\boldsymbol{A}t} \boldsymbol{Bu}(t)$$
+$$ e^{-\boldsymbol{A}t} \boldsymbol{\dot h}(t) - e^{-\boldsymbol{A}t} \boldsymbol{Ah}(t) = e^{-\boldsymbol{A}t} \boldsymbol{Bx}(t)$$
 
-$$ \frac{d}{dt} (e^{-\boldsymbol{A}t} \boldsymbol{x}(t)) = e^{-\boldsymbol{A}t} \boldsymbol{Bu}(t)$$
+$$ \frac{d}{dt} (e^{-\boldsymbol{A}t} \boldsymbol{h}(t)) = e^{-\boldsymbol{A}t} \boldsymbol{Bx}(t)$$
 
 Тогда общее решение для непрерывной модели будет:
 
-$$\boldsymbol{x}(t) = e^{\boldsymbol{A}t} \boldsymbol{x}(0) + \int_0^t{e^{\boldsymbol{A}(t-\tau)}} \boldsymbol{Bu}(\tau) d\tau$$
+$$\boldsymbol{h}(t) = e^{\boldsymbol{A}t} \boldsymbol{h}(0) + \int_0^t{e^{\boldsymbol{A}(t-\tau)}} \boldsymbol{Bx}(\tau) d\tau$$
 
-Шаг дискретизации $`\Delta \Rightarrow \boldsymbol{u_k} = \boldsymbol{u}(k \Delta), \boldsymbol{x_k} = \boldsymbol{x}(k \Delta), 
+Шаг дискретизации $`\Delta \Rightarrow \boldsymbol{x_k} = \boldsymbol{x}(k \Delta), \boldsymbol{h_k} = \boldsymbol{h}(k \Delta), 
 \boldsymbol{y_k} = \boldsymbol{y}(k\Delta)`$:
 
-$$ \boldsymbol{x_k} = e^{\boldsymbol{A}k\Delta} \boldsymbol{x}(0) + \int_0^{k\Delta}{e^{\boldsymbol{A}(k\Delta-\tau)}} \boldsymbol{Bu}(\tau) d\tau $$
+$$ \boldsymbol{h_k} = e^{\boldsymbol{A}k\Delta} \boldsymbol{h}(0) + \int_0^{k\Delta}{e^{\boldsymbol{A}(k\Delta-\tau)}} \boldsymbol{Bx}(\tau) d\tau $$
 
 $$ 
-\boldsymbol{x_{k+1}} = e^{\boldsymbol{A}\Delta} 
-\left[ e^{\boldsymbol{A}k\Delta} \boldsymbol{x}(0) + \int_0^{k\Delta}{e^{\boldsymbol{A}(k\Delta-\tau)}} \boldsymbol{Bu}(\tau) d\tau\right] +
-\int_{k\Delta}^{(k+1)\Delta} e^{\boldsymbol{A}\left[(k+1)\Delta-\tau\right]} \boldsymbol{Bu}(\tau) d\tau = $$
+\boldsymbol{h_{k+1}} = e^{\boldsymbol{A}\Delta} 
+\left[ e^{\boldsymbol{A}k\Delta} \boldsymbol{h}(0) + \int_0^{k\Delta}{e^{\boldsymbol{A}(k\Delta-\tau)}} \boldsymbol{Bx}(\tau) d\tau\right] +
+\int_{k\Delta}^{(k+1)\Delta} e^{\boldsymbol{A}\left[(k+1)\Delta-\tau\right]} \boldsymbol{Bx}(\tau) d\tau = $$
 
-Подставляем выражение для $`\boldsymbol{x_k}`$ и учитываем, что $`\boldsymbol{u}=const`$ внутри интервала  $`\Delta`$:
+Подставляем выражение для $`\boldsymbol{h_k}`$ и учитываем, что $`\boldsymbol{x}=const`$ внутри интервала  $`\Delta`$:
 
 $$ 
-= e^{\boldsymbol{A}\Delta} \boldsymbol{x_k} + \left[ \int_0^{\Delta} e^{\boldsymbol{A}\nu} d\nu \right] \boldsymbol{Bu_k} = 
-e^{\boldsymbol{A}\Delta} \boldsymbol{x_k} + \frac{1}{\boldsymbol{A}} (e^{\boldsymbol{A}\Delta}-\boldsymbol{I})\boldsymbol{Bu_k}
+= e^{\boldsymbol{A}\Delta} \boldsymbol{h_k} + \left[ \int_0^{\Delta} e^{\boldsymbol{A}\nu} d\nu \right] \boldsymbol{Bx_k} = 
+e^{\boldsymbol{A}\Delta} \boldsymbol{h_k} + \frac{1}{\boldsymbol{A}} (e^{\boldsymbol{A}\Delta}-\boldsymbol{I})\boldsymbol{Bx_k}
 $$
 
 Таким образом получаем дискретную time-invariant state-space model:
 
 $$\left\{ \begin{array}{lcl}
-\boldsymbol{x_k} = \overline{\boldsymbol{A}} \boldsymbol{x_{k-1}} + \overline{\boldsymbol{B}} \boldsymbol{u_k}\\ 
-\boldsymbol{y_k} = \boldsymbol{\overline{C} x_k}\\ 
+\boldsymbol{h_k} = \overline{\boldsymbol{A}} \boldsymbol{h_{k-1}} + \overline{\boldsymbol{B}} \boldsymbol{x_k}\\ 
+\boldsymbol{y_k} = \boldsymbol{\overline{C} h_k} + \overline{\boldsymbol{D}} \boldsymbol{x_k}\\ 
 \\
 \boldsymbol{\overline{A}} = e^{\boldsymbol{A}\Delta}\\
-\boldsymbol{\overline{B}} = \frac{1}{\boldsymbol{A}} (e^{\boldsymbol{A}\Delta}-\boldsymbol{I})\boldsymbol{B}\\
+\boldsymbol{\overline{B}} = \frac{1}{\boldsymbol{A}} (e^{\boldsymbol{A}\Delta}-\boldsymbol{I})\boldsymbol{B} \approx \Delta \boldsymbol{B}\\
 \boldsymbol{\overline{C}} = \boldsymbol{C}\\
+\boldsymbol{\overline{D}} = \boldsymbol{D}
 \end{array} \right$$
 
-### Bilinear transform
-Для упрощения вычислений матричной экспоненты применяем следующую апроксимацию:
+Если в параметре $`\boldsymbol{\overline{B}}`$ разложить экспоненту до первого порядка, происходит очень удачное упрощение, поэтому авторы пренебрегают точностью этого, не самого важного, параметра в пользу уменьшения вычислений:
 
-$$ e^{\boldsymbol{A}\Delta} \approx \left(\boldsymbol{I} - \frac{1}{2} \boldsymbol{A}\Delta \right)^{-1} 
-\left(\boldsymbol{I} + \frac{1}{2} \boldsymbol{A}\Delta \right)$$
+### Interpretation:
 
-Таким образом, параметры принимают следующий вид:
+$`\boldsymbol{x_k}`$ - вход модели, 
+$`\boldsymbol{y_k}`$ - выход модели, 
+$`\boldsymbol{h_k}`$ - скрытое состояние или память модели,
+$`\boldsymbol{\overline{A}}`$ - главный из параметров, отвечет за то, как мы преобразуем память с течением времени - параметр запоминания,
+$`\boldsymbol{\overline{B}}`$ - параметр преобразования входа,
+$`\boldsymbol{\overline{C}}`$ - параметр преобразования выхода,
+$`\boldsymbol{\overline{D}}`$ - своего рода **skip connection** или skip параметр,
+$`\Delta`$ - шаг дискретизации.
 
-$$ 
-\boldsymbol{\overline{A}} = \dfrac{\left(\boldsymbol{I} + \frac{1}{2} \boldsymbol{A}\Delta \right)}
-{\left(\boldsymbol{I} - \frac{1}{2} \boldsymbol{A}\Delta \right)}, \\;\\;\\;
-\boldsymbol{\overline{B}} = \dfrac{\Delta \boldsymbol{B}}{\left(\boldsymbol{I} - \frac{1}{2} \boldsymbol{A}\Delta \right)}, \\;\\;\\;
-\boldsymbol{\overline{C}} = \boldsymbol{C}
+В простейшем случае имеем такие размерности:
+
+$$ \boldsymbol{\overline{A}} (N, N), \\;
+\boldsymbol{\overline{B}} (N, 1), \\;
+\boldsymbol{\overline{C}} (1, N), \\;
+\boldsymbol{\overline{D}} (1, 1), \\;
+\boldsymbol{x_k} (1, 1), \\;
+\boldsymbol{y_k} (1, 1), \\;
+\boldsymbol{h_k}(N, 1), \\;
+\Delta = const
 $$
 
-### The Convolutional Representation
-Положим для упрощения $`x_{-1}=0`$, тогда:
+## Selective state space model
+### Glossary
+$`N`$ - размерность скрытого состояния <br/>
+$`L`$ - длина входной последовательности <br/>
+$`b`$ - размер батча <br/>
+$`d`$ - глубина модели <br/>
+$`E`$ - коэффициент расширения <br/>
+$`d_{in} = Ed`$ - глубина модели в mamba блоке <br/>
+$`A,B,C,D`$ - параметры SSM <br/>
+$`\Delta`$ - размер шага дискретезации <br/>
+$`\Delta_R = \frac{d}{16}`$ - размерность проекции <br/>
+
+
+### Parametrization
+Чтобы модель могла акцентировать внимание на определенных элементах входной последовательности, нужно сделать ее параметры (или часть из них) зависимыми от входа:
+
+$$ \boldsymbol{B} = \boldsymbol{xW_B}, \\; \boldsymbol{C} = \boldsymbol{xW_C}, \\; \Delta = Softplus[\boldsymbol{xW_{\Delta1} W_{\Delta2}}+\Delta_{bias}]$$
+
+$`\boldsymbol{A}`$ и $`\boldsymbol{D}`$ остаются независимыми от входа, но сами становятся параметрами. Параметр $`\boldsymbol{A}`$ будем хранить в логарифмической форме $`\boldsymbol{A_{log}}`$:
+
+$$ \boldsymbol{A} = -\exp^{\boldsymbol{A_{log}}}$$
+
+Таким образом, обучаемые параметры для селективного блока:
 
 $$ 
-x_0=\boldsymbol{\overline{B}}u_0, \\;\\; 
-x_1=\boldsymbol{\overline{AB}}u_0 + \boldsymbol{\overline{B}}u_1, \\;\\; 
-x_2=\boldsymbol{\overline{A^2B}}u_0 + \boldsymbol{\overline{AB}}u_1 + \boldsymbol{\overline{B}}u_2, \\;\\; 
-...
+\boldsymbol{A_{log}}(d_{in}, N), \boldsymbol{W_{B}}(d_{in}, N), \boldsymbol{W_{C}}(d_{in}, N), \boldsymbol{D}(d_{in}), \boldsymbol{W_{\Delta1}}(d_{in}, \Delta_R), \boldsymbol{W_{\Delta2}}(\Delta_R, d_{in}), \Delta_{bias}(d_{in})
 $$
 
-$$y_k = \boldsymbol{\overline{C}} \sum_{i=0}^k \overline{\boldsymbol{A}^{k-i}\boldsymbol{B}}u_i$$
+Введем сразу остальные параметры, которые будут использоваться в архитектуре:
 
-Или в векторном виде:
+$$
+\boldsymbol{W_{in}}(d, 2d_{in}), \boldsymbol{W_{out}}(d_{in}, d), 
+\boldsymbol{W_{emb}}(vocab\\:size, d)=\boldsymbol{W_{vocab}}^T, \boldsymbol{W_{conv1d}}(d_{in}, 1, K)
+$$
 
-$$\boldsymbol{\overline{K}} \in \mathbb{R}^L= (\boldsymbol{\overline{CB}}, \boldsymbol{\overline{CAB}}, ..., \boldsymbol{\overline{CA^{L-1}B}})$$
+### Parameters initialization
 
-$$ \boldsymbol{y} = \boldsymbol{\overline{K}} * \boldsymbol{u}$$
+Каждый из вышеописанных парметров инициаизируется по своему:
 
-Таким образом, для любой длины L входной последовательности, выход $`\boldsymbol{y}`$ может быть получен за одну свертку.
+$$ 
+\boldsymbol{A_{log}} = \ln
+\begin{pmatrix}
+1 & 2 & 3 & ... & N\\
+1 & 2 & 3 & ... & N\\
+  &   &...
+\end{pmatrix}, \\; \boldsymbol{h_0} = \overline{\boldsymbol{0}}, \\; \boldsymbol{D} = \overline{\boldsymbol{1}}, \\; \Delta_{bias} = Softplus^{-1}\left[Uniform(10^{-3}, 10^{-1}) \right]
+$$
+
+Параметр $`W_{conv1d}`$ задается стандартной инициализацией **conv1d** слоя с **bias=True**, тогда как все оставшиеся веса задаются **Linear** слоем с **bias=False**.
