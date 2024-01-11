@@ -83,7 +83,7 @@ $`N`$ - размерность скрытого состояния <br/>
 $`L`$ - длина входной последовательности <br/>
 $`b`$ - размер батча <br/>
 $`d`$ - глубина модели <br/>
-$`E`$ - коэффициент расширения <br/>
+$`E=2`$ - коэффициент расширения <br/>
 $`d_{in} = Ed`$ - глубина модели в mamba блоке <br/>
 $`A,B,C,D`$ - параметры SSM <br/>
 $`\Delta`$ - размер шага дискретезации <br/>
@@ -122,7 +122,48 @@ $$
 1 & 2 & 3 & ... & N\\
 1 & 2 & 3 & ... & N\\
   &   &...
-\end{pmatrix}, \\; \boldsymbol{h_0} = \overline{\boldsymbol{0}}, \\; \boldsymbol{D} = \overline{\boldsymbol{1}}, \\; \Delta_{bias} = Softplus^{-1}\left[Uniform(10^{-3}, 10^{-1}) \right]
+\end{pmatrix}, \\; \boldsymbol{D} = \overline{\boldsymbol{1}}, \\; \Delta_{bias} = Softplus^{-1}\left[Uniform(10^{-3}, 10^{-1}) \right]
 $$
 
-Параметр $`W_{conv1d}`$ задается стандартной инициализацией **conv1d** слоя с **bias=True**, тогда как все оставшиеся веса задаются **Linear** слоем с **bias=False**.
+Параметр $`\boldsymbol{W_{conv1d}}`$ задается стандартной инициализацией **conv1d** слоя с **bias=True**, тогда как все оставшиеся веса задаются **Linear** слоем с **bias=False**.
+
+### Selective SSM inference with Hardware-aware State Expansion
+
+*Рисунок 1: Устройство Selective SSM блока ([Mamba](https://arxiv.org/abs/2312.00752)).*
+![SSSM](https://github.com/Kirill-Shokhin/Research/assets/46619252/8485b8db-b090-4324-98df-ed6f92badfe9)
+
+
+$$\boldsymbol{x}(b, L, d_{in}), \boldsymbol{h_t}(b, d_{in}, N) \rightarrow \boldsymbol{y}(b, L, d_{in})$$
+
+#### 1) Подготовка (GPU HBM):
+Возвращение $`\boldsymbol{A}`$ в человеческий вид:
+
+$$\boldsymbol{A}(d_{in}, N) = -\exp^{\boldsymbol{A_{log}}}$$
+
+Проекция входа:
+     
+ $$\begin{array}{ccc}
+ \boldsymbol{B}(b, L, N) = \boldsymbol{xW_B}\\
+ \boldsymbol{C}(b, L, N) = \boldsymbol{xW_C}\\
+ \Delta(b, L, d_{in}) = Softplus[\boldsymbol{xW_{\Delta1} W_{\Delta2}}+\Delta_{bias}]
+ \end{array}$$
+
+#### 2) Selective scan (GPU SRAM):
+   
+Инициализация скрытого состояния: 
+
+$$\boldsymbol{h_{-1}} = \overline{\boldsymbol{0}}$$
+
+Дискретизация:
+     
+$$\begin{array}{ccc}
+\boldsymbol{\overline{A}}(b, L, d_{in}, N) = e^{\Delta \boldsymbol{A}}\\
+\boldsymbol{\overline{B}x}(b, L, d_{in}, N) = \Delta \boldsymbol{Bx}
+\end{array}$$
+
+В цикле по $`t`$ вдоль оси $`L`$ (по каждому токену) пересчет всех скрытых состояний $`\boldsymbol{h}`$ и соответсвующих им выходов $`\boldsymbol{y}`$:
+   
+$$\begin{array}{lcl}
+\boldsymbol{h_t} = \overline{\boldsymbol{A_t}} \boldsymbol{h_{t-1}} + \boldsymbol{(\overline{B} x)_t}\\ 
+\boldsymbol{y_t} = \boldsymbol{C_t h_t} + \boldsymbol{Dx_t}\\ 
+\end{array}$$
