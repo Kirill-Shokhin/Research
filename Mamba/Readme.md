@@ -167,3 +167,8 @@ $$\begin{array}{lcl}
 \boldsymbol{h_t} = \overline{\boldsymbol{A_t}} \boldsymbol{h_{t-1}} + \boldsymbol{(\overline{B} x)_t}\\ 
 \boldsymbol{y_t} = \boldsymbol{C_t h_t} + \boldsymbol{Dx_t}\\ 
 \end{array}$$
+
+## Архитектура Mamba
+
+![Mamba схемы](https://github.com/Kirill-Shokhin/Research/assets/46619252/15b732bd-da9a-44db-85a6-ed3e77faf6e3)
+*Рисунок 2: Устройство архитектуры Mamba*
