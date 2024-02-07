@@ -50,7 +50,7 @@ $$
 \left[ e^{\boldsymbol{A}k\Delta} \boldsymbol{h}(0) + \int_0^{k\Delta}{e^{\boldsymbol{A}(k\Delta-\tau)}} \boldsymbol{Bx}(\tau) d\tau\right] +
 \int_{k\Delta}^{(k+1)\Delta} e^{\boldsymbol{A}\left[(k+1)\Delta-\tau\right]} \boldsymbol{Bx}(\tau) d\tau = $$
 
-We substitute the expression for $`\boldsymbol{h_k}`$ and take into account that $`\boldsymbol{x}=const`$ is constant within the interval $`\Delta`$:
+We substitute the expression for $`\boldsymbol{h_k}`$ and take into account that $`\boldsymbol{x}=const`$ within the interval $`\Delta`$:
 
 $$ 
 = e^{\boldsymbol{A}\Delta} \boldsymbol{h_k} + \left[ \int_0^{\Delta} e^{\boldsymbol{A}\nu} d\nu \right] \boldsymbol{Bx_k} = 
@@ -127,7 +127,7 @@ $$ \boldsymbol{B} = \boldsymbol{xW_B}, \\; \boldsymbol{C} = \boldsymbol{xW_C}, \
 
 The parameter $`\Delta`$ governs the balance between how much to focus or ignore the current input signal. A large $`\Delta`$ resets the state $`\boldsymbol{h_k}`$ and focuses on the current input $`\boldsymbol{x_k}`$, while a small $`\Delta`$ maintains the state and ignores the current input. Parameters $`\boldsymbol{B}`$ and $`\boldsymbol{C}`$ allow for finer control, determining whether to incorporate the input $`\boldsymbol{x_k}`$ into the state $`\boldsymbol{h_k}`$ or the state into the output $`\boldsymbol{y_k}`$.
 
-$`\boldsymbol{A}`$ and $`\boldsymbol{D}`$ remain independent of the input but become parameters themselves. $`\boldsymbol{A}`$ will be stored in logarithmic form $`\boldsymbol{A_{log}}`$ (see S4D initialization):
+$`\boldsymbol{A}`$ and $`\boldsymbol{D}`$ remain independent of the input but become parameters themselves. $`\boldsymbol{A}`$ will be stored in logarithmic form $`\boldsymbol{A_{log}}`$ (*see [S4D](https://arxiv.org/pdf/2206.11893.pdf) initialization*):
 
 $$ \boldsymbol{A} = -\exp^{\boldsymbol{A_{log}}}$$
 
